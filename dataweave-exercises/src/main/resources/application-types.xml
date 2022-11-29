@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="order_details" format="csv">
+      <types:shape format="weave" example="examples/order_details.csv"><![CDATA[%dw 2.0
+
+type order_details = Array<{|  OrderDetailID: String,   OrderID: String,   ProductID: String,   Quantity: String|}> {"isQuotedString": "false",
+"header": "true",
+"headerLineNumber": "0"}
+
+]]></types:shape>
+      <types:properties>
+        <types:property name="headerLineNumber" value="0"/>
+        <types:property name="header" value="true"/>
+        <types:property name="isQuotedString" value="false"/>
+      </types:properties>
+    </types:type>
+    <types:type name="airports" format="csv">
+      <types:shape format="weave" example="examples/airports.csv"><![CDATA[%dw 2.0
+
+type airports = Array<{|  name: String,   lat: String,   lon: String,   alt: String,   tz: String,   tzone: String|}> {"isQuotedString": "false",
+"header": "true",
+"headerLineNumber": "0"}
+
+]]></types:shape>
+      <types:properties>
+        <types:property name="headerLineNumber" value="0"/>
+        <types:property name="header" value="true"/>
+        <types:property name="isQuotedString" value="false"/>
+      </types:properties>
+    </types:type>
+    <types:type name="products" format="csv">
+      <types:shape format="weave" example="examples/products.csv"><![CDATA[%dw 2.0
+
+type products = Array<{|  ProductID: String,   ProductName: String,   SupplierID: String,   CategoryID: String,   Unit: String,   Price: Number|}> {"isQuotedString": "false",
+"header": "true",
+"headerLineNumber": "0"}
+
+]]></types:shape>
+      <types:properties>
+        <types:property name="headerLineNumber" value="0"/>
+        <types:property name="header" value="true"/>
+        <types:property name="isQuotedString" value="false"/>
+      </types:properties>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#6d15bc39-4e90-4c8e-a7cd-67f8fc470bf2">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="order_details"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#1c4581c7-4fcc-4f7b-9cdf-effb96df4a23">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="airports"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#245c8a52-109b-428d-ba90-77f73c466cb2">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="airports"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#afa7b5c2-6fa9-4185-ba1c-cb3206866924">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="products"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>

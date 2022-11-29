@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="readUrl_demoFlow" doc:id="4d88e542-8521-40b1-9922-729c82f89634" >
+		<http:listener doc:name="Listener" doc:id="b50f8902-995c-4c48-bb43-04879ac78019" config-ref="HTTP_Listener_config" allowedMethods="GET" path="/w3schools"/>
+		<ee:transform doc:name="Return W3Schools Data" doc:id="b2775951-8330-4373-a41d-abd390fafd79" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+import * from dw::Runtime
+
+var requested_data = attributes.queryParams.data default ""
+var data_path = "classpath://input_data/" ++ requested_data 
+
+---
+try(() -> readUrl(data_path ++ ".json", "application/json"))
+orElseTry(() -> readUrl(data_path ++ ".xml", "application/xml"))
+orElseTry(() -> readUrl(data_path ++ ".csv", "application/csv"))
+orElse(() -> fail(requested_data ++ " not found!"))]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="readUrl_demoFlow1" doc:id="7b45f01d-50b8-411c-8d57-173d34184e55" >
+		<http:listener doc:name="Listener" doc:id="a7c43dd8-e47c-43f3-99d8-7da24d0a5eb4" config-ref="HTTP_Listener_config" path="/airports"/>
+		<ee:transform doc:name="Retun Requested Field from the airports data" doc:id="0aad3e06-1bdb-4fde-a9ad-4473eddae366" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+var field_name = attributes.queryParams.field default ""
+var airports = readUrl("classpath://input_data/airports.json", "application/json")
+---
+airports[field_name] distinctBy $ orderBy $]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

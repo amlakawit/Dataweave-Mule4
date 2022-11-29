@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="update_demoFlow" doc:id="14835fae-7c9f-44b1-b5a2-8460f34b8a58" >
+		<ee:transform doc:name="Transform Message" doc:id="fb19ca52-2f9c-405f-b545-3c1da6fad5bb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+//Round long and lat to two decimal places 
+// Only for US East time zone, account for daylight saving 
+output application/json
+
+var airports = readUrl("classpath://input_data/airports.json", "application/json")
+
+---
+airports map (airport, index) ->
+     airport  update {
+        case lat at .lat ->  lat as String{format: ".##"} as Number
+        case lon at .lon -> lon as String{format: ".##"} as Number
+        case tz at .tz -> if(tz==-5) tz +1 else tz
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

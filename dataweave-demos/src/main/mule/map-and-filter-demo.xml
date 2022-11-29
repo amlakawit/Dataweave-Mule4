@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:ftp="http://www.mulesoft.org/schema/mule/ftp"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ftp http://www.mulesoft.org/schema/mule/ftp/current/mule-ftp.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="43371904-0a12-47ca-af0c-d70803930c7a" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="fe00f04b-a51c-45c7-a77b-3d17ad257b89" >
+		<file:connection workingDir="C:\workspace\MuleSoft\MuleSoftWithFish\data" />
+	</file:config>
+	<file:config name="File_Config1" doc:name="File Config" doc:id="66eb0044-8d7e-4a2e-8dc9-f7025069f57c" >
+		<file:connection workingDir="C:\workspace\MuleSoft\MuleSoftWithFish\data\output_folder" />
+	</file:config>
+	<flow name="map-and-filter-demoFlow" doc:id="d853ecb9-f1fc-4db0-8185-24ca334bf820" >
+		<http:listener doc:name="Listener" doc:id="3c5d0dd4-6a96-4556-8959-bfb51af79fa2" allowedMethods="GET" config-ref="HTTP_Listener_config" path="/dataweave-map-and-filter-demo"/>
+		<file:read doc:name="Read CSV Web Log File" doc:id="e3afac06-d46a-4772-aef8-6b15c2febe63" config-ref="File_Config" path="C:\workspace\MuleSoft\MuleSoftWithFish\data\access_log_NASA.csv" outputMimeType='application/csv; header=true; separator=","'/>
+		<ee:transform doc:name="to JSON" doc:id="f554e054-50dc-4585-ac9d-b2cf7b9f3d72" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="map" doc:id="1a07be4f-1359-4afd-b1ed-54daed260615" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (value, index) ->{
+	 "host": value.host,	
+	 "date_time":value.date_time as LocalDateTime {format:'d/MMM/y:HH:mm:ss'} default '',		
+	 "time_zone":value.time_zone,		
+	 "endpoint":	value.endpoint,	
+	 "status_code":value.status_code,
+	 "size_returned":value.size_returned as Number default 0,
+	 "year":value.date_time as LocalDateTime {format:'d/MMM/y:H:m:s'} as String{format:'y'} default '',
+	 "month":value.date_time as LocalDateTime {format:'d/MMM/y:HH:mm:ss'} as String{format:'M'} default '',
+	 "month_name":value.date_time as LocalDateTime {format:'d/MMM/y:H:m:s'} as String{format:'MMMM'} default '',
+	 "month_Abbreviated":value.date_time as LocalDateTime {format:'d/MMM/y:HH:mm:ss'} as String{format:'MMM'} default '',
+	 "dayOfYear":value.date_time as LocalDateTime {format:'d/MMM/y:HH:mm:ss'} as String{format:'D'} default '',
+	 "dayOfmonth":value.date_time as LocalDateTime {format:'d/MMM/y:HH:mm:ss'} as String{format:'d'} default '',
+	 "dayOfweek":value.date_time as LocalDateTime {format:'d/MMM/y:HH:mm:ss'} as String{format:'EEEE'} default '',
+	 "dayOfweek_Abbreviated":value.date_time as LocalDateTime {format:'d/MMM/y:HH:mm:ss'} as String{format:'EEE'} default '',
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="2d1146b9-101a-4cb1-b0fe-22375ec1e05f" message="#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	&#10;	'max size': max(payload..size_returned),&#10;	 'min size': min(payload..size_returned),&#10;	 'average size': round(avg(payload..size_returned))&#10;}]"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="0c7b31c5-6e9d-48b5-a1c1-e4ed54c29b7b" >
+			<route >
+				<ee:transform doc:name="Fillter: status_code=='400'" doc:id="acd89817-8206-4d5a-9c58-ea80eea7a80c">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/csv
+---
+payload filter (value, index) -> value.status_code == "400"
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<file:write doc:name="statuscode200.csv" doc:id="76f0e770-91d5-4c5b-8822-cdb7c9760204" config-ref="File_Config1" path="C:\workspace\MuleSoft\MuleSoftWithFish\data\output_folder\statuscode400.csv" />
+			</route>
+			<route >
+				<ee:transform doc:name="Fillter: status_code in the 400's" doc:id="ace55b9b-8fa3-4758-9794-6746218de9ff" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+---
+payload filter (value, index) -> value.status_code startsWith("4")]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<file:write doc:name="statuscode2xx.csv" doc:id="92b31c58-71bf-45fe-917d-a647aa83ef30" config-ref="File_Config1" path="C:\workspace\MuleSoft\MuleSoftWithFish\data\output_folder\statuscode4xx.csv"/>
+			</route>
+			<route >
+				<ee:transform doc:name="Fillter: endpoint is gif image" doc:id="6a6294e6-24e1-4cd7-beb6-625aaf4d9b6b" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+---
+payload filter (value, index) -> value.endpoint endsWith(".gif")]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<file:write doc:name="gifimage.csv" doc:id="f9e41677-eb85-4735-b4bf-94c110448d31" config-ref="File_Config1" path="C:\workspace\MuleSoft\MuleSoftWithFish\data\output_folder\gifimage.csv"/>
+			</route>
+			<route >
+				<ee:transform doc:name="Fillter: endpoint cotains 'usa'" doc:id="0e13dbf8-70eb-4f06-941e-6b6566b0b534" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+---
+payload filter (value, index) -> value.endpoint contains("USA")]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<file:write doc:name="usaendpoint.csv" doc:id="3e703ad6-8499-456e-b52b-71190f5d67b2" config-ref="File_Config1" path="C:\workspace\MuleSoft\MuleSoftWithFish\data\output_folder\usaendpoint.csv"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Message to end user" doc:id="7c27fe80-ed6d-4354-8f1c-1b467df0c26c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message":'Completed!'
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

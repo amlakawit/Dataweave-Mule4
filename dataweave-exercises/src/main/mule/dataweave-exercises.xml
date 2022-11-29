@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="interview-questions-q7" doc:id="6b200bbc-f182-441b-9a3b-55416045b49a" >
+		<ee:transform doc:name="Transform Message" doc:id="245c8a52-109b-428d-ba90-77f73c466cb2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+sizeOf(payload filter(value) -> value.tz == "-5" or value.tzone == "America/New_York")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="interview-questions-q8" doc:id="858e13e6-03bb-4298-9f5c-0c20d3279c09" >
+		<ee:transform doc:name="Transform Message" doc:id="afa7b5c2-6fa9-4185-ba1c-cb3206866924" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv 
+---
+payload map (value) ->
+{
+	ProductID: value.ProductID,
+	ProductName: value.ProductName,
+	SupplierID: value.SupplierID,
+	CategoryID: value.CategoryID,
+	Unit: value.Unit,
+	Price: value.Price*0.9
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dataweave-exercisesFlow" doc:id="2e58f9f9-ef53-4a9a-a9a0-b58629046c6f" >
+		<ee:transform doc:name="join" doc:id="d60c8d71-90b9-4a8a-8dd3-e1c20163b134" >
+			<ee:message >
+				<ee:set-payload resource="join.dwl" />
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dataweave-exercisesFlow1" doc:id="b056a2f8-2480-4363-b5a0-bd8ce93bcaca" >
+		<ee:transform doc:name="importing our own function" doc:id="5856988a-f1ac-4efd-8d6a-7f34a3743646" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+import  myModules::myFunctions
+---
+myFunctions::common_diff([1,2], [2,3])]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dataweave-exercisesFlow2" doc:id="cf7d0ad5-f41f-4e70-94cd-79670e16001a" >
+		<ee:transform doc:name="inner-join-arrays-using-map" doc:id="5747bd9a-ae3d-4c18-ab29-5763984b7a03" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+import * from dw::core::Arrays
+
+var customers = readUrl("classpath://w3schools/customers.csv", "application/csv")
+var orders = readUrl("classpath://w3schools/orders.csv", "application/csv")
+
+var joined =  flatten(
+	 customers map (customer, cust_index) -> orders map(order, ord_index) ->
+if(customer.CustomerID == order.CustomerID ) {
+	CustomerID: customer.CustomerID,
+	CustomerName: customer.CustomerName,
+	Address: customer.Address,
+	City:customer.City,
+	Country:  customer.Country,
+	OrderID: order.OrderID,
+	EmployeeID: order.EmployeeID,
+	OrderDate: order.OrderDate,
+	ShipperID: order.ShipperID
+} else null
+
+) filter $ != null
+---
+joined
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="dataweave-exercisesFlow3" doc:id="a55307c7-7c9e-4f7b-85a2-df5bd630d3ad" >
+		<ee:transform doc:name="countBy--demo" doc:id="db4215ab-d42d-4489-88a4-df8be6550e23" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json 
+
+import * from dw::core::Arrays
+var customers = readUrl("classpath://w3schools/customers.csv", "application/csv")
+
+---
+customers countBy($.Country == "USA")
+
+sizeOf(customers filter $.Country == "USA")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
